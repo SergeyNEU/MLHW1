@@ -4,6 +4,8 @@
 import numpy as np
 from scipy.stats import multivariate_normal
 
+# I used docs from https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.multivariate_normal.html
+
 # -------- GIVEN PARAMETERS --------
 
 # Given parameters for the multivariate Gaussian distributions

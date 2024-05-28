@@ -8,19 +8,18 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # -------- PART A --------
 
-# Define the parameters for the multivariate Gaussian distributions
-mean_vector_class1 = np.array([1, 1, 1])
+mean_vector_class1 = np.array([1, 0, 0])
 covariance_matrix_class1 = np.array([[1, 0.5, 0], [0.5, 1, 0.5], [0, 0.5, 1]])
 
-mean_vector_class2 = np.array([-1, -1, -1])
+mean_vector_class2 = np.array([-1, 0, 0])
 covariance_matrix_class2 = np.array([[1, -0.5, 0], [-0.5, 1, -0.5], [0, -0.5, 1]])
 
-mean_vector_class3a = np.array([3, 3, 3])
-covariance_matrix_class3a = np.array([[1, 0.2, 0.1], [0.2, 1, 0.2], [0.1, 0.2, 1]])
+mean_vector_class3a = np.array([0, 1, 1])
+covariance_matrix_class3a = np.array([[1, 0.25, 0.1], [0.25, 1, 0.25], [0.1, 0.25, 1]])
 
-mean_vector_class3b = np.array([-3, -3, -3])
+mean_vector_class3b = np.array([0, -1, -1])
 covariance_matrix_class3b = np.array(
-    [[1, -0.2, -0.1], [-0.2, 1, -0.2], [-0.1, -0.2, 1]]
+    [[1, -0.25, -0.1], [-0.25, 1, -0.25], [-0.1, -0.25, 1]]
 )
 
 # Class priors
@@ -28,7 +27,7 @@ prior_class1 = 0.3
 prior_class2 = 0.3
 prior_class3 = 0.4
 
-# Generate samples
+# Generating samples
 num_samples = 10000
 samples_class1 = np.random.multivariate_normal(
     mean_vector_class1, covariance_matrix_class1, int(num_samples * prior_class1)
@@ -44,7 +43,7 @@ samples_class3b = np.random.multivariate_normal(
 )
 samples_class3 = np.vstack((samples_class3a, samples_class3b))
 
-# Concatenate all samples
+# Concatenating all samples
 samples = np.vstack((samples_class1, samples_class2, samples_class3))
 labels = np.hstack(
     (
@@ -54,7 +53,6 @@ labels = np.hstack(
     )
 )
 
-# Scatter plot of the generated data
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
 ax.scatter(
@@ -62,7 +60,7 @@ ax.scatter(
     samples_class1[:, 1],
     samples_class1[:, 2],
     marker="o",
-    color="blue",
+    color="red",
     label="Class 1",
 )
 ax.scatter(
@@ -78,7 +76,7 @@ ax.scatter(
     samples_class3[:, 1],
     samples_class3[:, 2],
     marker="s",
-    color="red",
+    color="blue",
     label="Class 3",
 )
 ax.set_xlabel("X1")
@@ -90,7 +88,7 @@ plt.savefig("3d_scatter_plot.png", facecolor="white", edgecolor="white")
 plt.show()
 
 
-# Implement the Minimum Probability of Error (MAP) Classifier
+# Minimum Probability of Error (MAP) Classifier
 def classify_sample(x):
     likelihood_class1 = multivariate_normal.pdf(
         x, mean=mean_vector_class1, cov=covariance_matrix_class1
@@ -115,18 +113,18 @@ def classify_sample(x):
 
 predicted_labels = np.array([classify_sample(x) for x in samples])
 
-# Confusion matrix calculation
 confusion_matrix = np.zeros((3, 3))
-for true_label, predicted_label in zip(labels, predicted_labels):
-    confusion_matrix[int(predicted_label) - 1, int(true_label) - 1] += 1
+for i in range(len(labels)):
+    true_label = int(labels[i])
+    predicted_label = int(predicted_labels[i])
+    confusion_matrix[predicted_label - 1, true_label - 1] += 1
 
 confusion_matrix /= num_samples
 
-# Display the confusion matrix
-print("Confusion Matrix (Part A):")
+print("--------------------Part A--------------------")
+print("Confusion Matrix:")
 print(confusion_matrix)
 
-# Plot the classification results
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
 correctly_classified = labels == predicted_labels
@@ -160,7 +158,7 @@ plt.show()
 # -------- PART B --------
 
 
-# Define the function for ERM classification with loss matrices
+# ERM classification with loss matrices
 def classify_sample_erm(x, loss_matrix):
     likelihood_class1 = multivariate_normal.pdf(
         x, mean=mean_vector_class1, cov=covariance_matrix_class1

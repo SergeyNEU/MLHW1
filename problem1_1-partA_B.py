@@ -3,13 +3,14 @@
 
 import numpy as np
 from scipy.stats import multivariate_normal
+
+# Using directions from https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.multivariate_normal.html
 import matplotlib.pyplot as plt
 
 # Part 1: Specify the minimum expected risk classification rule in the form of a likelihood-ratio test
 
 # -------- GIVEN PARAMETERS --------
 
-# Define the parameters for the multivariate Gaussian distributions
 mean_vector_class0 = np.array([-1, 1, -1, 1])
 covariance_matrix_class0 = np.array(
     [[2, -0.5, 0.3, 0], [-0.5, 1, -0.5, 0], [0.3, -0.5, 1, 0], [0, 0, 0, 2]]
@@ -20,19 +21,17 @@ covariance_matrix_class1 = np.array(
     [[1, 0.3, -0.2, 0], [0.3, 2, 0.3, 0], [-0.2, 0.3, 1, 0], [0, 0, 0, 3]]
 )
 
-# Class priors
 prior_class0 = 0.7
 prior_class1 = 0.3
 
 # -------- MINIMUM EXPECTED RISK CLASSIFICATION RULE --------
 
-# Define the loss values
 loss_true_negative = 0  # Loss when the decision is 0 and the true class is 0
 loss_false_negative = 1  # Loss when the decision is 0 and the true class is 1
 loss_false_positive = 1  # Loss when the decision is 1 and the true class is 0
 loss_true_positive = 0  # Loss when the decision is 1 and the true class is 1
 
-# Calculate the threshold gamma
+# Calculate the threshold gamma, I use this later
 theoretical_threshold_gamma = (
     prior_class0 * (loss_false_positive - loss_true_negative)
 ) / (prior_class1 * (loss_false_negative - loss_true_positive))
@@ -46,7 +45,6 @@ true_class_labels = data["labels"]
 
 # -------- CLASSIFICATION USING MINIMUM EXPECTED RISK CLASSIFIER --------
 
-# Calculate the likelihoods for each class
 likelihood_class0 = multivariate_normal.pdf(
     samples, mean=mean_vector_class0, cov=covariance_matrix_class0
 )
@@ -54,17 +52,17 @@ likelihood_class1 = multivariate_normal.pdf(
     samples, mean=mean_vector_class1, cov=covariance_matrix_class1
 )
 
-# Calculate the likelihood ratio
+# I use this likelihood ratio to make decisions
 likelihood_ratio = likelihood_class1 / likelihood_class0
 
 # -------- VARY THE THRESHOLD GAMMA --------
-threshold_values = np.linspace(0, 100, 1000)
+threshold_values = np.linspace(0, 100, 1000)  # Threshold gamma from 0 to 100
 true_positive_rate = []  # True Positive Rate
 false_positive_rate = []  # False Positive Rate
 probability_of_error = []  # Probability of Error
 
 for gamma in threshold_values:
-    # Make decisions based on the likelihood ratio test
+    # Making decisions based on the likelihood ratio test
     decisions = (likelihood_ratio > gamma).astype(int)
 
     # Calculate True Positives, False Positives, True Negatives, and False Negatives
@@ -118,7 +116,7 @@ plt.scatter(
     [optimal_false_positive_rate],
     [optimal_true_positive_rate],
     color="red",
-    zorder=5,
+    zorder=99,
     label=f"Minimum Probability of Error at Gamma={optimal_threshold_gamma:.2f}",
 )
 plt.xlabel("False Positive Rate (FPR)")
@@ -206,7 +204,6 @@ optimal_false_positive_rate_naive = false_positive_rate_naive[
     minimum_probability_of_error_index_naive
 ]
 
-# Plot the ROC curve for Naive Bayesian Classifier
 plt.figure(figsize=(8, 6))
 plt.plot(
     false_positive_rate_naive,
@@ -218,7 +215,7 @@ plt.scatter(
     [optimal_false_positive_rate_naive],
     [optimal_true_positive_rate_naive],
     color="red",
-    zorder=5,
+    zorder=99,
     label=f"Minimum Probability of Error at Gamma={optimal_threshold_gamma_naive:.2f}",
 )
 plt.xlabel("False Positive Rate (FPR)")
@@ -229,7 +226,6 @@ plt.grid(True)
 plt.savefig("roc_curve_b.png", facecolor="white", edgecolor="white")
 plt.show()
 
-# Output the results for Naive Bayesian Classifier
 print("--------------------Part B--------------------")
 print(f"Optimal Threshold Gamma (Naive): {optimal_threshold_gamma_naive}")
 print(f"Minimum Probability of Error (Naive): {minimum_probability_of_error_naive}")

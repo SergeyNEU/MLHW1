@@ -1,15 +1,9 @@
-# By Sergey Petrushkevich
-# Wine Quality and Human Activity Recognition Classification
-
 import numpy as np
 import pandas as pd
 from scipy.stats import multivariate_normal
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
 import seaborn as sns
-
-# -------- WINE QUALITY DATASET --------
 
 # Load the Wine Quality dataset
 wine_data_red = pd.read_csv("wine+quality/winequality-red.csv", sep=";")
@@ -17,144 +11,141 @@ wine_data_white = pd.read_csv("wine+quality/winequality-white.csv", sep=";")
 wine_data = pd.concat([wine_data_red, wine_data_white], ignore_index=True)
 
 # Separate features and labels
-X_wine = wine_data.iloc[:, :-1].values
-y_wine = wine_data.iloc[:, -1].values
+wine_features = wine_data.iloc[:, :-1].values
+wine_labels = wine_data.iloc[:, -1].values
 
 # Split the data into training and test sets
-X_train_wine, X_test_wine, y_train_wine, y_test_wine = train_test_split(
-    X_wine, y_wine, test_size=0.3, random_state=42
+wine_features_train, wine_features_test, wine_labels_train, wine_labels_test = (
+    train_test_split(wine_features, wine_labels, test_size=0.3, random_state=42)
 )
 
-# Calculate class priors, means, and covariance matrices
-classes_wine = np.unique(y_train_wine)
+# Calculate class priors, means, and covariance matrices for wine data
+wine_classes = np.unique(wine_labels_train)
 class_priors_wine = {}
 class_means_wine = {}
 class_covariances_wine = {}
+regularization_lambda = 0.01
 
-for c in classes_wine:
-    X_c = X_train_wine[y_train_wine == c]
-    class_priors_wine[c] = X_c.shape[0] / X_train_wine.shape[0]
-    class_means_wine[c] = np.mean(X_c, axis=0)
-    class_covariances_wine[c] = np.cov(X_c, rowvar=False) + 0.01 * np.eye(X_c.shape[1])
+for class_label in wine_classes:
+    class_data = wine_features_train[wine_labels_train == class_label]
+    class_priors_wine[class_label] = class_data.shape[0] / wine_features_train.shape[0]
+    class_means_wine[class_label] = np.mean(class_data, axis=0)
+    class_covariances_wine[class_label] = np.cov(
+        class_data, rowvar=False
+    ) + regularization_lambda * np.eye(class_data.shape[1])
 
 
-# Implement the classifier
-def classify_samples_wine(X):
+# Classifier function for wine data
+def classify_wine(samples):
     posteriors = []
-    for c in classes_wine:
+    for class_label in wine_classes:
         likelihood = multivariate_normal.pdf(
-            X, mean=class_means_wine[c], cov=class_covariances_wine[c]
+            samples,
+            mean=class_means_wine[class_label],
+            cov=class_covariances_wine[class_label],
         )
-        posterior = likelihood * class_priors_wine[c]
+        posterior = likelihood * class_priors_wine[class_label]
         posteriors.append(posterior)
-    return classes_wine[np.argmax(posteriors, axis=0)]
+    return wine_classes[np.argmax(posteriors, axis=0)]
 
 
-# Classify the test samples and calculate the error rate
-y_pred_wine = classify_samples_wine(X_test_wine)
-error_rate_wine = np.mean(y_pred_wine != y_test_wine)
+# Classify the test samples and calculate the error rate for wine data
+wine_predictions = classify_wine(wine_features_test)
+wine_error_rate = np.mean(wine_predictions != wine_labels_test)
 
-# Confusion matrix
-confusion_matrix_wine = pd.crosstab(
-    y_test_wine, y_pred_wine, rownames=["True"], colnames=["Predicted"], margins=True
+# Confusion matrix for wine data
+wine_confusion_matrix = pd.crosstab(
+    wine_labels_test,
+    wine_predictions,
+    rownames=["True"],
+    colnames=["Predicted"],
+    margins=True,
 )
 
-print("Error rate (Wine Quality):", error_rate_wine)
+print("Error rate (Wine Quality):", wine_error_rate)
 print("Confusion Matrix (Wine Quality):")
-print(confusion_matrix_wine)
+print(wine_confusion_matrix)
 
-# Visualize the dataset using PCA
-pca = PCA(n_components=2)
-X_pca_wine = pca.fit_transform(X_wine)
-
-plt.figure(figsize=(10, 7))
-sns.scatterplot(
-    x=X_pca_wine[:, 0],
-    y=X_pca_wine[:, 1],
-    hue=y_wine,
-    palette="viridis",
-    s=70,
-    alpha=0.7,
+# Visualize the Wine Quality dataset (pair plot for first few features)
+wine_df = pd.DataFrame(wine_features_train, columns=wine_data.columns[:-1])
+wine_df["Quality"] = wine_labels_train
+sns.pairplot(
+    wine_df, hue="Quality", vars=wine_data.columns[:5], plot_kws={"alpha": 0.5}
 )
-plt.title("Wine Quality Dataset - PCA Projection")
-plt.xlabel("Principal Component 1")
-plt.ylabel("Principal Component 2")
-plt.legend(title="Wine Quality", loc="best", bbox_to_anchor=(1, 1))
+plt.suptitle("Wine Quality Dataset - Pair Plot of First Five Features", y=1.02)
 plt.tight_layout()
-plt.savefig("wine_quality_pca.png")
+plt.savefig("wine_quality_pairplot.png")
 plt.show()
 
-# -------- HUMAN ACTIVITY RECOGNITION DATASET --------
-
 # Load the Human Activity Recognition dataset
-X_train_har = np.loadtxt(
+har_train_features = np.loadtxt(
     "human+activity+recognition+using+smartphones/UCI HAR Dataset/train/X_train.txt"
 )
-y_train_har = np.loadtxt(
+har_train_labels = np.loadtxt(
     "human+activity+recognition+using+smartphones/UCI HAR Dataset/train/y_train.txt"
 ).astype(int)
-X_test_har = np.loadtxt(
+har_test_features = np.loadtxt(
     "human+activity+recognition+using+smartphones/UCI HAR Dataset/test/X_test.txt"
 )
-y_test_har = np.loadtxt(
+har_test_labels = np.loadtxt(
     "human+activity+recognition+using+smartphones/UCI HAR Dataset/test/y_test.txt"
 ).astype(int)
 
-# Calculate class priors, means, and covariance matrices
-classes_har = np.unique(y_train_har)
+# Calculate class priors, means, and covariance matrices for HAR data
+har_classes = np.unique(har_train_labels)
 class_priors_har = {}
 class_means_har = {}
 class_covariances_har = {}
 
-for c in classes_har:
-    X_c = X_train_har[y_train_har == c]
-    class_priors_har[c] = X_c.shape[0] / X_train_har.shape[0]
-    class_means_har[c] = np.mean(X_c, axis=0)
-    class_covariances_har[c] = np.cov(X_c, rowvar=False) + 0.01 * np.eye(X_c.shape[1])
+for class_label in har_classes:
+    class_data = har_train_features[har_train_labels == class_label]
+    class_priors_har[class_label] = class_data.shape[0] / har_train_features.shape[0]
+    class_means_har[class_label] = np.mean(class_data, axis=0)
+    class_covariances_har[class_label] = np.cov(
+        class_data, rowvar=False
+    ) + regularization_lambda * np.eye(class_data.shape[1])
 
 
-# Implement the classifier
-def classify_samples_har(X):
+# Classifier function for HAR data
+def classify_har(samples):
     posteriors = []
-    for c in classes_har:
+    for class_label in har_classes:
         likelihood = multivariate_normal.pdf(
-            X, mean=class_means_har[c], cov=class_covariances_har[c]
+            samples,
+            mean=class_means_har[class_label],
+            cov=class_covariances_har[class_label],
         )
-        posterior = likelihood * class_priors_har[c]
+        posterior = likelihood * class_priors_har[class_label]
         posteriors.append(posterior)
-    return classes_har[np.argmax(posteriors, axis=0)]
+    return har_classes[np.argmax(posteriors, axis=0)]
 
 
-# Classify the test samples and calculate the error rate
-y_pred_har = classify_samples_har(X_test_har)
-error_rate_har = np.mean(y_pred_har != y_test_har)
+# Classify the test samples and calculate the error rate for HAR data
+har_predictions = classify_har(har_test_features)
+har_error_rate = np.mean(har_predictions != har_test_labels)
 
-# Confusion matrix
-confusion_matrix_har = pd.crosstab(
-    y_test_har, y_pred_har, rownames=["True"], colnames=["Predicted"], margins=True
+# Confusion matrix for HAR data
+har_confusion_matrix = pd.crosstab(
+    har_test_labels,
+    har_predictions,
+    rownames=["True"],
+    colnames=["Predicted"],
+    margins=True,
 )
 
-print("Error rate (Human Activity Recognition):", error_rate_har)
+print("Error rate (Human Activity Recognition):", har_error_rate)
 print("Confusion Matrix (Human Activity Recognition):")
-print(confusion_matrix_har)
+print(har_confusion_matrix)
 
-# Visualize the dataset using PCA
-pca = PCA(n_components=2)
-X_pca_har = pca.fit_transform(X_test_har)
-
-plt.figure(figsize=(10, 7))
-sns.scatterplot(
-    x=X_pca_har[:, 0],
-    y=X_pca_har[:, 1],
-    hue=y_test_har,
-    palette="viridis",
-    s=70,
-    alpha=0.7,
+# Visualize the HAR dataset (pair plot for first few features)
+har_df = pd.DataFrame(
+    har_train_features[:, :5], columns=[f"Feature {i+1}" for i in range(5)]
 )
-plt.title("Human Activity Recognition Dataset - PCA Projection")
-plt.xlabel("Principal Component 1")
-plt.ylabel("Principal Component 2")
-plt.legend(title="Activity", loc="best", bbox_to_anchor=(1, 1))
+har_df["Activity"] = har_train_labels
+sns.pairplot(har_df, hue="Activity", plot_kws={"alpha": 0.5})
+plt.suptitle(
+    "Human Activity Recognition Dataset - Pair Plot of First Five Features", y=1.02
+)
 plt.tight_layout()
-plt.savefig("human_activity_recognition_pca.png")
+plt.savefig("human_activity_recognition_pairplot.png")
 plt.show()
