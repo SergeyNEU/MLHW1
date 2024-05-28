@@ -1,3 +1,6 @@
+# By Sergey Petrushkevich
+# Problem 1.3
+
 import numpy as np
 import pandas as pd
 from scipy.stats import multivariate_normal
@@ -5,12 +8,11 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Load the Wine Quality dataset
 wine_data_red = pd.read_csv("wine+quality/winequality-red.csv", sep=";")
 wine_data_white = pd.read_csv("wine+quality/winequality-white.csv", sep=";")
 wine_data = pd.concat([wine_data_red, wine_data_white], ignore_index=True)
 
-# Separate features and labels
+# Separating features and labels
 wine_features = wine_data.iloc[:, :-1].values
 wine_labels = wine_data.iloc[:, -1].values
 
@@ -19,7 +21,6 @@ wine_features_train, wine_features_test, wine_labels_train, wine_labels_test = (
     train_test_split(wine_features, wine_labels, test_size=0.3, random_state=42)
 )
 
-# Calculate class priors, means, and covariance matrices for wine data
 wine_classes = np.unique(wine_labels_train)
 class_priors_wine = {}
 class_means_wine = {}
@@ -53,7 +54,6 @@ def classify_wine(samples):
 wine_predictions = classify_wine(wine_features_test)
 wine_error_rate = np.mean(wine_predictions != wine_labels_test)
 
-# Confusion matrix for wine data
 wine_confusion_matrix = pd.crosstab(
     wine_labels_test,
     wine_predictions,
@@ -66,7 +66,6 @@ print("Error rate (Wine Quality):", wine_error_rate)
 print("Confusion Matrix (Wine Quality):")
 print(wine_confusion_matrix)
 
-# Visualize the Wine Quality dataset (pair plot for first few features)
 wine_df = pd.DataFrame(wine_features_train, columns=wine_data.columns[:-1])
 wine_df["Quality"] = wine_labels_train
 sns.pairplot(
@@ -120,11 +119,9 @@ def classify_har(samples):
     return har_classes[np.argmax(posteriors, axis=0)]
 
 
-# Classify the test samples and calculate the error rate for HAR data
 har_predictions = classify_har(har_test_features)
 har_error_rate = np.mean(har_predictions != har_test_labels)
 
-# Confusion matrix for HAR data
 har_confusion_matrix = pd.crosstab(
     har_test_labels,
     har_predictions,
@@ -137,7 +134,6 @@ print("Error rate (Human Activity Recognition):", har_error_rate)
 print("Confusion Matrix (Human Activity Recognition):")
 print(har_confusion_matrix)
 
-# Visualize the HAR dataset (pair plot for first few features)
 har_df = pd.DataFrame(
     har_train_features[:, :5], columns=[f"Feature {i+1}" for i in range(5)]
 )
